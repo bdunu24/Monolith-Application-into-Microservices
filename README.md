@@ -106,7 +106,7 @@ There are two ways to clone your repo:
 
 1. Open up your text-editor and use the 'Clone Repository' tab on the left-hand side. You'll have the option of entering in your cloned URL from github there. You may be asked where on your PC you'd like to save your repository. Once you do so, you will have access to the *amazon-ecs-nodejs-microservices* repository we cloned from Github.
 
-![](./clone2.png)
+![](./clone1.png)
 
 ![](./clone3.png)
 
@@ -114,7 +114,7 @@ There are two ways to clone your repo:
 
     $ git clone <clone-link>
 
-![](./clone1.png)
+![](./clone2.png)
 
 **Step Six: Creating the Repository on AWS**
 
