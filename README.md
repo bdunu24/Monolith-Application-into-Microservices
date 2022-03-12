@@ -37,7 +37,6 @@ Both the monolithic and miniservices applications are secured and maintained usi
 
 ![](./contain.png)
 
-
 # Part One: System Setup
 
 As mentioned in the beginning, we'll be breaking a monolith application into microservices. Prior to this, we'll need to ensure we have access to a few software and tools. Let's get started!
@@ -219,7 +218,7 @@ On the Configure stack options page, keep the default options and scroll down 
 
 ![](./stackdeets2.png)
 
-7. On the **Review BreakTheMonolith-Demo** page, scroll to the bottom of the page. Acknowledge the **Capabilities** statement by selecting the checkbox, and select **Create stack**.
+On the **Review BreakTheMonolith-Demo** page, scroll to the bottom of the page. Acknowledge the **Capabilities** statement by selecting the checkbox, and select **Create stack**.
 
 ![](./capabilities.png)
 
@@ -232,10 +231,10 @@ You will see your stack with the status *CREATE_IN_PROGRESS.* This process typic
 Alternatively, you can use the AWS CLI to deploy AWS CloudFormation stacks. Run the following code in the terminal from the folder amazon-ecs-nodejs-microservices/3-microservices and replace [region] with your AWS Region:
 
     $ aws cloudformation deploy \
-   --template-file infrastructure/ecs.yml \
-   --region [region] \
-   --stack-name BreakTheMonolith-Demo \
-   --capabilities CAPABILITY_NAMED_IAM
+        --template-file infrastructure/ecs.yml \
+        --region [region] \
+        --stack-name BreakTheMonolith-Demo \
+        --capabilities CAPABILITY_NAMED_IAM
 
 2. Ensure that your Cluster is Running
 
@@ -265,17 +264,444 @@ Select the ECS Instances tab to verify there are two Amazon EC2 instances create
 
     - In the **Task Definition Name** field, enter *api*.
 
+    ![](./api.png)
+
     - Scroll down to **Container Definitions** and select **Add container**.
+
+In the **Add container** window:
+
+- Parameters that are not defined can be either left blank or with the default settings.
+
+ - In the **Container name** field, enter *api*.
+
+- In the **Image** field, add the following, replacing the values in brackets with your specific values:
+
+    [account-ID].dkr.ecr.[region].amazonaws.com/api:latest
 
 ![](./addcon.png)
 
-    - In the **Add container** window:
+- In the **Memory Limits** field, verify **Hard limit** is selected and enter *256* as the value.
 
-        - Parameters that are not defined can be either left blank or with the default settings.
+- Under **Port mappings**, Host port = *0* and Container port = *3000*.
 
-        - In the **Container name** field, enter *api*.
-
-        - In the **Image** field, add the following, replacing the values in brackets with your specific values:
-
-             [account-ID].dkr.ecr.[region].amazonaws.com/api:latest
+- Scroll to **ENVIRONMENT**, CPU units = *256*.
     
+- Select **Add**.You will return to the **Configure task and container definitions** page.
+
+- Scroll to the bottom of the page and select **Create**.
+
+![](./apiactive.png)
+
+Great! Our Task Definition is listed in the console.
+
+4. Confirguring the Application Load Balancer (ALB)
+
+    - Navigate to the [Target Group section of the EC2 Console](https://console.aws.amazon.com/ec2/v2/home?#TargetGroups:).
+
+        - Locate the Load Balancer named **demo**
+
+        - In the Description tab, scroll down and locate the VPC attribute (in this format: vpc-xxxxxxxxxxxxxxxxx). **Please note:** You will need this for the next step when you configure the ALB target group!
+
+        ![](./vpc.png)
+
+5. Confirguring the ALB Target Group
+
+    - Navigate to the [Target Group section of the EC2 Console](https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#TargetGroups:).
+
+        - Select **Create target group**.
+
+        ![](./ctg.png)
+
+        - Configure the following Target Group parameters (for the parameters not listed below, keep the default values):
+
+        - For the **Target group name**, enter *api*.
+
+        - For the **Protocol**, select **HTTP**.
+
+        - For the **Port**, enter *80*.
+
+        - For the VPC, select the value that matches the one from the Load Balancer description.
+
+    ![](./ctg2.png)
+
+     - Access the **Advanced health check settings** and edit the following parameters as needed:
+
+        - For **Healthy threshold**, enter *2*.
+
+        - For **Unhealthy threshold**, enter *2*.
+
+        - For **Timeout**, enter *5*.
+
+        - For **Interval**, enter *6*.
+
+        - Select **Create**.
+
+    ![](./ctg3.png)
+
+    ![](./tgcreated.png)
+
+6. Add a Listener to the ALB
+The ALB listener checks for incoming connection requests to your ALB.
+
+- Navigate to the [Load Balancer section of the EC2 Console](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:).
+
+- Select the checkbox next to **demo** to see the Load Balancer details.
+
+- Select the **Listeners** tab.
+
+- Select **Add listener** and edit the following parameters as needed:
+
+    ![](./addl.png)
+
+    - For **Protocol:port**, select **HTTP** and enter *80*.
+
+    - For **Default action(s)**, select **Forward to** and in the **Target group** field, enter *api*.
+
+    ![](./addl2.png)
+
+- Select **Save**.
+
+7. Deploy the monolith as a service into the cluster
+
+- Navigate to the [Amazon ECS console](https://console.aws.amazon.com/ecs/home?) and select **Clusters** from the left menu bar.
+
+- Select the cluster **BreakTheMonolith-Demo**, select the **Services** tab then select **Create**.
+
+![](./services.png)
+
+- On the **Configure service** page, edit the following parameters (and keep the default values for parameters not listed below):
+
+    - For the **Launch type**, select **EC2**.
+    
+    - For the **Service name**, enter *api*.
+
+    - For the **Number of tasks**, enter *1*.
+
+![](./configureserv.png)
+
+- Select **Next step**.
+
+- On the **Configure network** page, **Load balancing** section, select **Application Load Balancer**.Additional parameters will apear: **Service IAM role** and **Load balancer name**.
+
+    - For the **Service IAM role**, select BreakTheMonolith-Demo-ECSServiceRole.
+
+    - For the **Load balancer name**, verify that **demo** is selected.
+
+    ![](./confignet.png)
+
+- In the **Container to load balance** section, select **Add to load balancer**.Additional information labeled **api:3000** is shown.
+
+- In the **api:3000** section, do the following:
+
+    - For the **Production listener port** field, select **80:HTTP**.
+
+    - For the **Target group name**, select your group: **api**.
+
+![](./confignet2.png)
+
+- Select **Next step**.
+
+- On the Set Auto Scaling page, leave the default setting and select *Next step*.
+
+- On the Review page, review the settings then select *Create Service*.
+
+Once the service has been created, select *View Service*.
+
+![](./launchstat.png)
+
+Nice work! We now have a running service. It may take a minute for the container to register as healthy and begin receiving traffic.
+
+8. Finding Service URL
+
+- Navigate to the [Load Balancers](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:) section of the EC2 Console.
+
+- Select your load balancer **demo**.
+- In the **Description** tab, copy the DNS name and paste into a new browser tab or window.
+
+- You should see the message **Ready to receive requests**.
+
+![](./r2rr.png)
+
+**See Each Part of the Service:** The node.js application routes traffic to each worker based on the URL. To see a worker, simply add the worker name *api/[worker-name]* to the end of the DNS Name as follows:
+
+- http://*[DNS name]*/api/users
+
+![](./apiusers.png)
+
+- http://*[DNS name]*/api/threads
+
+![](./apithreads.png)
+
+- http://*[DNS name]*/api/posts
+
+![](./apiposts.png)
+
+You can also add a record number at the end of the URL to drill down to a particular record. For example: *http://[DNS name]/api/posts/1* or *http://[DNS name]/api/users/2*
+
+![](./apiusers2.png)
+
+# Part Three: Breaking the Monolith
+
+In the previous two sections, we were able to deploy our application as a monolith using a single service and a single container image repository. In this section, we're going to deploy the node.js application as three microservices. In order to do this, we'll need to provision three repositories (one for each service) in Amazon ECR. Our three services are as follows:
+
+1. users
+
+2. threads
+
+3. posts
+
+First we'll need to navigate to the [Amazon ECR console](https://console.aws.amazon.com/ecs/home?#/repositories).
+
+Select **Create repository**. In the **Create repository** page, **Repository name** field, create a repository for the service (posts, threads, or users).
+
+You should have four repositories in Amazon ECR. Record the repository information for each microservice that you created. This information will be needed in an upcoming step. The information needed is in the following format:[account-id].dkr.ecr.[region].amazonaws.com/[service-name]
+
+![](./4repos.png)
+
+We'll now need access to Docker to build and push the images for each service. If you are working on this project at different points in time, you may have been logged out of Docker. If this is the case, take the following steps to log into Docker again.
+
+Run the following command:
+
+    $ aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [account id].dkr.ecr.[region].amazonaws.com
+
+If the authentication was successful, you will receive the confirmation message: **Login Succeeded**
+
+![](./loginsuc.png)
+
+In your terminal, run the following command:
+
+    $ cd ~/amazon-ecs-nodejs-microservices/3-microservices/services
+
+### Build and Tag Each Image
+
+In the terminal, run:
+
+    $ docker build -t [service-name] ./[service-name]
+
+**Reminder:** Replace the [service-name]––for example: docker build -t posts ./posts
+
+![](./buildposts.png)
+
+After the build completes, tag the image so you can push it to the repository:
+
+    $ docker tag [service-name]:latest [account-ID].dkr.ecr.[region].amazonaws.com/[service-name]:latest
+
+**Reminder:** Replace [service-name], [account-ID], and [region]. For example: docker tag posts:latest [account-id].dkr.ecr.us-west-2.amazonaws.com/posts:latest
+
+Now push your image to ECR:
+
+    $ docker push [account-id].dkr.ecr.[region].amazonaws.com/[service-name]:latest
+
+![](./bp2.png)
+
+Great! Now make sure to repeat these steps for **each** microservice image.
+
+# Part 4: Deploying Microservices
+
+In this section we'll focus on deploying our node.js application as a set of interconnected services behind an Application Load Balancer (ALB). Then, we'll use the ALB to shift traffic from the monolith to microservices uninterrupted.
+
+**1. Creating Task Definitions for Services**
+
+1. From the [Amazon Container Services console](https://console.aws.amazon.com/ecs/), under **Amazon ECS**, select **Task definitions**.
+
+2. In the **Task Definitions** page, select the **Create new Task Definition** button.
+
+3. In the **Select launch type compatibility** page, select the **EC2** option and then select **Next step**.
+
+4. In the Configure task and container definitions page, scroll to the **Volumes** section and select the **Configure via JSON** button.
+
+5. Copy and paste the following code snippet into the JSON field, replacing the existing code.Remember to replace the [service-name], [account-ID], [region], and [tag] placeholders.
+
+    {
+        "containerDefinitions": [
+            {
+                "name": "[service-name]",
+                "image": "[account-id].dkr.ecr.[region].amazonaws.com/[service-name]:[tag]",
+                "memoryReservation": "256",
+                "cpu": "256",
+                "essential": true,
+                "portMappings": [
+                    {
+                        "hostPort": "0",
+                        "containerPort": "3000",
+                        "protocol": "tcp"
+                    }
+                ]
+            }
+        ],
+        "volumes": [],
+        "networkMode": "bridge",
+        "placementConstraints": [],
+        "family": "[service-name]"
+    }
+
+![](./json.png)
+
+ Repeat the steps to create a task definition for **each** service:
+
+- posts
+- threads
+- users
+
+![](./users.png)
+
+As previously mentioned in part two, target groups allow traffic to correctly reach a specified service. We'll configure the target groups using AWS CLI. Before proceeding, ensure you have the correct VPC name that is being used for this project:
+
+- Navigate to the [Load Balancer section of the EC2 Console](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:).
+- Select the checkbox next to demo, select the **Description** tab, and locate the **VPC** attribute (in this format: vpc-xxxxxxxxxxxxxxxxx). **Note:** You will need the VPC attribute when you configure the target groups.
+
+**2. Configure the Target Groups**
+
+Navigate to your terminal, and enter the following command to create a target group for each service (posts, threads, and users).
+
+We'll also create a target group (drop-traffic) to keep traffic from reaching your monolith after your microservices are fully running.
+
+**Remember to replace the following placeholders: [region], [service-name], and [vpc-attribute].**
+
+    $ aws elbv2 create-target-group --region [region] --name [service-name] --protocol HTTP --port 80 --vpc-id [vpc-attribute] --healthy-threshold-count 2 --unhealthy-threshold-count 2 --health-check-timeout-seconds 5 --health-check-interval-seconds 6 
+
+Service names:
+
+- posts
+
+- threads
+
+- users
+
+- drop-traffic
+
+![](./targetgroup.png)
+
+The *listener* checks for incoming connection requests to your ALB in order to route traffic appropriately. Currently, our monolith and three microservices are running on the same load balancer. 
+
+In order to transition from monolith to microservices, we'll start routing traffic to our microservices and stop routing traffic to our monolith.
+
+**3. Setting up the listener rules**
+
+- Navigate to the [Load Balancer section of the EC2 Console](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:).
+
+- Locate the Load Balancer named **demo** and select the checkbox next to it to see the Load Balancer details.
+
+- Select the **Listeners** tab.
+
+- Under the **Rules** column, select **View/edit rules**.
+
+- On the **Rules** page, select the plus (**+**) button.The option to **Insert Rule** appears on the page.
+
+- Use the following rule template to insert the necessary rules which include one to maintain traffic to the monolith and one for each microservice:
+
+    - IF Path = /api/[service-name]* THEN Forward to [service-name]For example: IF Path = /api/posts* THEN Forward to posts
+
+    - Insert the rules in the following order:
+
+        - api: */api** forwards to *api*
+
+        - users: */api/users** forwards to *users*
+
+        - threads: */api/threads** forwards to *threads*
+
+        - posts: */api/posts** forwards to *posts*
+
+- Select **Save**.
+
+- Select the back arrow at the top left corner of the page to return to the load balancer console.
+
+![](./listeners.png)
+
+**4. Deploying the microservices**
+
+- Navigate to the [Amazon ECS console](https://console.aws.amazon.com/ecs/home) and select **Clusters** from the left menu bar.
+
+- Select the cluster **BreakTheMonolith-Demo**, select the **Services** tab then select **Create**.
+
+- On the **Configure service** page, edit the following parameters (and keep the default values for parameters not listed below):
+
+    - For the **Launch type**, select **EC2**.
+
+    - For the **Task Definition**, select the **Enter a value** button to automatically select the highest revision value.For example: api:1
+
+    - For the **Service name**, enter a service name (*posts, threads, or users*).
+
+    - For the **Number of tasks**, enter *1*
+
+![](./configposts.png)
+
+- Select **Next step**.
+
+- On the **Configure network** page, **Load balancing** section, do the following:
+
+    - For the **Load balancer type**, select **Application Load Balancer**.
+
+    - For the **Service IAM role**, select **BreakTheMonolith-Demo-ECSServiceRole**.
+
+    - For the **Load balancer name**, verify that **demo** is selected.
+
+    - In the **Container to load balance** section, select the **Add to load balancer** button and make the following edits:
+
+        - For the **Production listener port**, set to **80:HTTP**.
+
+        - For the **Target group name**, select the appropriate group: *(***posts**, **threads**, or **users**)
+
+- Select **Next step**.
+
+- On the **Set Auto Scaling** page, select **Next step**.
+
+- On the **Review** page, select **Create Service**.
+
+- Select **View Service**.
+
+Ensure you complete the steps above for **each service** Then double check that all services and tasks are running and active before you proceeding to the next step.
+
+![](./alllisteners.png)
+
+**5. Rerouting traffic to the microservices**
+
+We'll now reroute traffic from the monolith to our microservices.
+
+- Navigate to the [Load Balancers section of the EC2 Console](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:).
+
+- Select the checkbox next to **demo** to see the Load Balancer details.
+- Select the **Listeners** tab.There should only be one listener listed.
+- Under the **Rules** column, select **View/edit rules**.
+- On the **Rules** page, select the minus (****) button from the top menu.
+- Delete the first rule (*/api* forwards to api*) by selecting the checkbox next to the rule.
+- Select **Delete**.
+
+![](./delete.png)
+
+- Update the default rule to forward to drop-traffic:
+    - Select the edit (pencil) button from the top menu.
+    - Select the edit (pencil) icon next to the default rule (**HTTP 80: default action**).
+    - Selec the edit (pencil) icon in the **THEN** column to edit the **Forward to**.
+    - In the **Target group** field, select **drop-traffic**.
+    - Select the **Update** button.
+
+The updated rules should look something like below: 
+
+![](./droptraffic.png)
+
+**6. Disabling the monolith**
+
+- Navigate back to the Amazon ECS cluster **BreakTheMonolith-Demo-ECSCluster**.
+- In the **Services** tab, select the checkbox next to **api** and select **Update**.
+- On the **Configure service** page, locate **Number of tasks** and enter *0*.
+
+![](./numoft.png)
+
+- Select **Skip to review**.
+- Select **Update Service**.
+
+![](./servupdated.png)
+
+Wow! We have now transitioned our node.js from the monolith to microservices with zero downtime!
+
+7. Locating service URL
+
+- Navigate to the [Load Balancers section of the EC2 console](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:).
+
+- Select the checkbox next to **demo** to see the Load Balancer details.
+- In the **Description** tab, locate the **DNS name** and select the copy icon at the end of the URL.
+- Paste the DNS name into a new browser tab or window.
+
+You should see a message 'Ready to receive requests'.
+
