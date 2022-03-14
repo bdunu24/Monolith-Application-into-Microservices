@@ -501,40 +501,42 @@ Great! Now make sure to repeat these steps for **each** microservice image.
 
 In this section we'll focus on deploying our node.js application as a set of interconnected services behind an Application Load Balancer (ALB). Then, we'll use the ALB to shift traffic from the monolith to microservices uninterrupted.
 
-**1. Creating Task Definitions for Services**
+**1. Creating Task Definitions for Our Services**
 
 1. From the [Amazon Container Services console](https://console.aws.amazon.com/ecs/), under **Amazon ECS**, select **Task definitions**.
 
 2. In the **Task Definitions** page, select the **Create new Task Definition** button.
 
-3. In the **Select launch type compatibility** page, select the **EC2** option and then select **Next step**.
+3. On the **Select launch type compatibility** page, select the **EC2** option and then select **Next step**.
 
 4. In the Configure task and container definitions page, scroll to the **Volumes** section and select the **Configure via JSON** button.
 
-5. Copy and paste the following code snippet into the JSON field, replacing the existing code.Remember to replace the [service-name], [account-ID], [region], and [tag] placeholders.
+5. Copy and paste the following code snippet into the JSON field, replacing the existing code.
 
-    {
-        "containerDefinitions": [
-            {
-                "name": "[service-name]",
-                "image": "[account-id].dkr.ecr.[region].amazonaws.com/[service-name]:[tag]",
-                "memoryReservation": "256",
-                "cpu": "256",
-                "essential": true,
-                "portMappings": [
-                    {
-                        "hostPort": "0",
-                        "containerPort": "3000",
-                        "protocol": "tcp"
-                    }
-                ]
-            }
-        ],
-        "volumes": [],
-        "networkMode": "bridge",
-        "placementConstraints": [],
-        "family": "[service-name]"
-    }
+Remember to replace the [service-name], [account-ID], [region], and [tag] placeholders.
+
+{
+    "containerDefinitions": [
+        {
+            "name": "[service-name]",
+            "image": "[account-id].dkr.ecr.[region].amazonaws.com/[service-name]:[tag]",
+            "memoryReservation": "256",
+            "cpu": "256",
+            "essential": true,
+            "portMappings": [
+                {
+                    "hostPort": "0",
+                    "containerPort": "3000",
+                    "protocol": "tcp"
+                }
+            ]
+        }
+    ],
+    "volumes": [],
+    "networkMode": "bridge",
+    "placementConstraints": [],
+    "family": "[service-name]"
+}
 
 ![](./json.png)
 
