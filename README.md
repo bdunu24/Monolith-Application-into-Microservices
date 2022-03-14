@@ -535,7 +535,8 @@ Remember to replace the [service-name], [account-ID], [region], and [tag] placeh
     "volumes": [],
     "networkMode": "bridge",
     "placementConstraints": [],
-    "family": "[service-name]"}
+    "family": "[service-name]"
+}
 
 ![](./json.png)
 
