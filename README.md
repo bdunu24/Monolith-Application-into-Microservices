@@ -166,6 +166,7 @@ For additional help with AWS configuration, click [here](https://docs.aws.amazon
         --username AWS \
         --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
 
+
 ![](./awsid.png)
 
 2. To build the image, run the following command in the terminal:
@@ -176,19 +177,19 @@ For additional help with AWS configuration, click [here](https://docs.aws.amazon
 
 3. After the build completes, tag the image so you can push it to the repository:
 
-    $ docker push [account-id].dkr.ecr.[region].amazonaws.com/api:latest
+    $ docker push [account-id].dkr.ecr.[region].amazonaws.com/api:v1
 
 **Disclaimer:** Please remember to replace values within brackets, such as the [account-ID] and [region], as they will be unique to your setup.
 
 4. Push the image to Amazon ECR by running the following:
 
-    $ docker push [account-id].dkr.ecr.[region].amazonaws.com/api:latest
+    $ docker push [account-id].dkr.ecr.[region].amazonaws.com/api:v1
 
 ![](./repotag.png)
 
 If you navigate to your Amazon ECR repository, you should now see your image tagged:
 
-![](./imagetag.png)
+![](./lt2.png)
 
 # Part Two: Deploying the Monolith
 
@@ -705,3 +706,74 @@ Wow! We have now transitioned our node.js from the monolith to microservices wit
 
 You should see a message 'Ready to receive requests'.
 
+**See the values for each microservice:** ALB routes traffic based on the request URL. To see each service, simply add the service name to the end of your DNS name:
+
+- http://[DNS name]/api/users
+- http://[DNS name]/api/threads
+- http://[DNS name]/api/posts
+
+![](./albtraffic.png)
+
+These URLs perform exactly the same as when the monolith is deployed, which is incredibly important––any APIs or consumers that would expect to connect to this app will not be affected by the changes we've made. Transitioning from monolith to microservices required no changes to other parts of our infrastructure!
+
+**Note:** We can also use tools such as [Postman](https://www.getpostman.com/) for testing our APIs.
+
+# Part 5: Clean Up
+
+We'll now terminate the resources you created during this tutorial. This includes stopping the services running on Amazon ECS, deleting the ALB, and deleting the AWS CloudFormation stack to terminate the ECS cluster, including all underlying EC2 instances. 
+
+While cleaning up isn't necessary, it help us avoid ongoing charges for keeping these services running!
+
+### Clean Up Instructions
+
+Start clean up by deleting each of the services (posts, threads and users) that are running in your cluster:
+
+1. Navigate to the [Amazon ECS console](https://console.aws.amazon.com/ecs/home?) and select **Clusters**.
+- Select the **BreakTheMonolith-Demo** cluster.
+- In the **Services** tab, select a service and then select **Delete**.
+- Confirm the deletion.
+- Repeat the steps until all the services in the cluster are deleted.
+
+![](./deleteme.png)
+
+Ensure that all running tasks are terminated, or select the *Tasks* tab and select **Stop All.**
+
+2. Next, navigate to the [Load Balancer section of the EC2 Console.](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers:)
+
+- Select the checkbox next to **demo** and select the **Listeners** tab.
+- Select the listener, then select **Delete**.
+- Confirm the deletion.Navigate to [Target Groups](https://console.aws.amazon.com/ec2/v2/home?#TargetGroups:) in the EC2 console.Check the checkbox at the top of the list (next to **Name**) to select all target groups.Select **Actions** then select **Delete**.Confirm the deletion.
+
+![](./listenerdelete.png)
+
+3. Now, navigate to the [AWS CloudFormation console](https://console.aws.amazon.com/cloudformation/home?).
+
+- Check the box next to the Cloudformation stack **BreakTheMonolith-Demo**.
+- Select **Actions** then select **Delete Stack**.
+- Confirm the deletion.
+- The stack status should change to DELETE_IN_PROGRESS*.*
+
+**⚠** **WARNING!** Leaving a stack running will result in charges on your AWS account.
+
+![](./deletedemo.png)
+
+![](./delinpro.png)
+
+4. Navigate to [Task Definitions](https://console.aws.amazon.com/ecs/home?#/taskDefinitions) in the Amazon ECR console.
+
+- Select a task definition (api, posts, threads, or users).
+- On the **Task Definition Name** page, select the checkbox next to the task name.
+- Select **Actions** then from the drop-down list select **Deregister**.
+- Confirm your action.
+
+Repeat these steps for all four task definitions.
+
+5. Navigate to [Repositories](https://console.aws.amazon.com/ecs/home?#/repositories) in the Amazon ECR console.
+
+- Select the checkbox next to a repository and then select **Delete**.
+- Confirm the deletion.
+- Repeat the steps until all the repositories are deleted.
+
+![](./deregister.png)
+
+Congratulations!! We just broke the Monolith!
