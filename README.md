@@ -515,28 +515,27 @@ In this section we'll focus on deploying our node.js application as a set of int
 
 Remember to replace the [service-name], [account-ID], [region], and [tag] placeholders.
 
-    {
-        "containerDefinitions": [
-            {
-                "name": "[service-name]",
-                "image": "[account-id].dkr.ecr.[region].amazonaws.com/[service-name]:[tag]",
-                "memoryReservation": "256",
-                "cpu": "256",
-                "essential": true,
-                "portMappings": [
-                    {
-                        "hostPort": "0",
-                        "containerPort": "3000",
-                        "protocol": "tcp"
-                    }
-                ]
-            }
-        ],
-        "volumes": [],
-        "networkMode": "bridge",
-        "placementConstraints": [],
-        "family": "[service-name]"
-    }
+{
+    "containerDefinitions": [
+        {
+            "name": "[service-name]",
+            "image": "[account-id].dkr.ecr.[region].amazonaws.com/[service-name]:[tag]",
+            "memoryReservation": "256",
+            "cpu": "256",
+            "essential": true,
+            "portMappings": [
+                {
+                    "hostPort": "0",
+                    "containerPort": "3000",
+                    "protocol": "tcp"
+                }
+            ]
+        }
+    ],
+    "volumes": [],
+    "networkMode": "bridge",
+    "placementConstraints": [],
+    "family": "[service-name]"}
 
 ![](./json.png)
 
